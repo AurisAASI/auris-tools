@@ -192,3 +192,22 @@ def test_list_files_success():
 
     assert isinstance(files, list)
     assert len(files) > 0
+
+
+def test_get_file_object_success():
+    """Test getting a file object."""
+    # Setup
+    handler = StorageHandler()
+
+    # Execute
+    obj = handler.get_file_object(TEST_BUCKET_NAME, 'plain_text_sample.txt')
+
+    assert obj is not None
+
+    # Test getting using as_byte option
+    obj_byte = handler.get_file_object(
+        TEST_BUCKET_NAME, 'plain_text_sample.txt', as_bytes=True
+    )
+    assert obj_byte is not None
+    assert isinstance(obj_byte, bytes)
+    assert len(obj_byte) > 0

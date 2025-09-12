@@ -7,11 +7,12 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
-packages = [{include = "auris-tools"}]
+packages = [{include = "auris_tools"}]
 dependencies = [
     "rich (>=14.1.0,<15.0.0)",
     "boto3 (>=1.40.29,<2.0.0)",
-    "dotenv (>=0.9.9,<0.10.0)"
+    "dotenv (>=0.9.9,<0.10.0)",
+    "python-docx (>=1.2.0,<2.0.0)"
 ]
 
 
@@ -25,7 +26,6 @@ pytest = "^8.4.2"
 pytest-cov = "^7.0.0"
 blue = "^0.9.1"
 taskipy = "^1.14.1"
-bump2version = "^1.0.1"
 
 [tool.isort]
 profile = "black"
