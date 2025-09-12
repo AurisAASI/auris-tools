@@ -263,7 +263,7 @@ class OfficeWordHandler:
         for rel in document.part.rels.values():
             if rel.reltype == RT.HYPERLINK and placeholder in rel.target_ref:
                 logging.info(
-                    f'Replacing hyperlink: {rel.target_ref} -> {rel.target_ref.replace(target, replacement)}'
+                    f'Replacing hyperlink: {rel.target_ref} -> {rel.target_ref.replace(placeholder, replacement)}'
                 )
                 rel._target = rel.target_ref.replace(placeholder, replacement)
                 count += 1
