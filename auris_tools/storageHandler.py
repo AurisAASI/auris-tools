@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import boto3
 
-from .configuration import AWSConfiguration
+from auris_tools.configuration import AWSConfiguration
 
 
 class StorageHandler:
@@ -67,6 +67,29 @@ class StorageHandler:
         except Exception as e:
             logging.error(f'Error downloading file {object_name}: {str(e)}')
             return False
+
+    def get_file_object(self, bucket_name, object_name, as_bytes=False):
+        """
+        Get a file object from an S3 bucket.
+
+        Args:
+            bucket_name: Bucket name
+            object_name: S3 object name (key)
+            as_bytes: If True, return the content as bytes instead of a streaming object
+
+        Returns:
+            S3 object (streaming) or bytes if as_bytes=True or None if not found
+        """
+        try:
+            response = self.client.get_object(
+                Bucket=bucket_name, Key=object_name
+            )
+            if as_bytes:
+                return response['Body'].read()
+            return response['Body']
+        except Exception as e:
+            logging.error(f'Error getting file object {object_name}: {str(e)}')
+            return None
 
     def check_file_exists(self, bucket_name, object_name):
         """
