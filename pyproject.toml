@@ -1,5 +1,5 @@
 [project]
-name = "auris-tools"
+name = "auris_tools"
 version = "0.0.1"
 description = "The swiss knife tools to coordinates cloud frameworks with an easy for Auris platforms"
 authors = [
