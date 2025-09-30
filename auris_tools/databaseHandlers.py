@@ -19,15 +19,20 @@ class DatabaseHandler:
         self.table_name = table_name
         if config is None:
             config = AWSConfiguration()
+        
 
         # Create a boto3 session with the configuration
         session = boto3.session.Session(**config.get_boto3_session_args())
 
         # Create a DynamoDB client with additional configuration if needed
         self.client = session.client('dynamodb', **config.get_client_args())
+        
+        if not self._check_table_exists(table_name):
+            raise Exception(f"Table does not exist: {table_name}")
+        
         logging.info(f'Initialized DynamoDB client in region {config.region}')
 
-    def insert_item(self, table_name, item, primary_key: str = 'id'):
+    def insert_item(self, item, primary_key: str = 'id'):
         """Insert an item with automatic type conversion"""
         if not isinstance(item, dict):
             raise TypeError('Item must be a dictionary')
@@ -36,15 +41,16 @@ class DatabaseHandler:
             item[primary_key] = generate_uuid()
 
         dynamo_item = self._serialize_item(item)
-        response = self.client.put_item(TableName=table_name, Item=dynamo_item)
+        response = self.client.put_item(
+            TableName=self.table_name, Item=dynamo_item
+        )
         return response
 
-    def get_item(self, table_name, key):
+    def get_item(self, key):
         """
         Retrieve an item from a DynamoDB table.
 
         Args:
-            table_name: Name of the DynamoDB table.
             key: A dictionary representing the key of the item to retrieve.
 
         Returns:
@@ -59,18 +65,19 @@ class DatabaseHandler:
             key = self._serialize_item(key)
 
         try:
-            response = self.client.get_item(TableName=table_name, Key=key)
+            response = self.client.get_item(TableName=self.table_name, Key=key)
             return response.get('Item')
         except Exception as e:
-            logging.error(f'Error retrieving item from {table_name}: {str(e)}')
+            logging.error(
+                f'Error retrieving item from {self.table_name}: {str(e)}'
+            )
             return None
 
-    def delete_item(self, table_name, key, primary_key='id'):
+    def delete_item(self, key, primary_key='id'):
         """
         Delete an item from a DynamoDB table.
 
         Args:
-            table_name (str): Name of the DynamoDB table.
             key (str or dict): Either a string identifier for the primary key,
                               or a dictionary containing the complete key structure.
             primary_key (str, optional): Name of the primary key field. Defaults to 'id'.
@@ -90,14 +97,16 @@ class DatabaseHandler:
 
         try:
             self.client.delete_item(
-                TableName=table_name,
+                TableName=self.table_name,
                 Key=key,
                 ReturnValues='ALL_OLD',  # Return the deleted item
             )
-            logging.info(f'Deleted item from {table_name} with key {key}')
+            logging.info(f'Deleted item from {self.table_name} with key {key}')
             return True
         except Exception as e:
-            logging.error(f'Error deleting item from {table_name}: {str(e)}')
+            logging.error(
+                f'Error deleting item from {self.table_name}: {str(e)}'
+            )
             return False
 
     def item_is_serialized(self, item):
@@ -113,3 +122,12 @@ class DatabaseHandler:
         """Convert DynamoDB format back to Python types"""
         deserializer = TypeDeserializer()
         return {k: deserializer.deserialize(v) for k, v in item.items()}
+
+    def _check_table_exists(self, table_name):
+        """Check if a DynamoDB table exists"""
+        try:
+            existing_tables = self.client.list_tables().get('TableNames', [])
+            return table_name in existing_tables
+        except Exception as e:
+            logging.error(f'Error checking table existence: {str(e)}')
+            return False
