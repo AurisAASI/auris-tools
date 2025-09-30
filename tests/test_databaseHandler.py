@@ -23,9 +23,12 @@ class TestDatabaseHandler:
     def test_init_invalid_table_name_raise_error(self):
         """Test initialization with invalid table name raises an error."""
         with pytest.raises(Exception) as error:
-            DatabaseHandler(table_name='invalid_table_name_that_does_not_exist', config=self.config)
+            DatabaseHandler(
+                table_name='invalid_table_name_that_does_not_exist',
+                config=self.config,
+            )
 
-        assert "Table does not exist" in str(error.value)
+        assert 'Table does not exist' in str(error.value)
 
     def test_init_with_parameters(self):
         """Test initialization with parameters."""

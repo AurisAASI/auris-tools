@@ -19,17 +19,16 @@ class DatabaseHandler:
         self.table_name = table_name
         if config is None:
             config = AWSConfiguration()
-        
 
         # Create a boto3 session with the configuration
         session = boto3.session.Session(**config.get_boto3_session_args())
 
         # Create a DynamoDB client with additional configuration if needed
         self.client = session.client('dynamodb', **config.get_client_args())
-        
+
         if not self._check_table_exists(table_name):
-            raise Exception(f"Table does not exist: {table_name}")
-        
+            raise Exception(f'Table does not exist: {table_name}')
+
         logging.info(f'Initialized DynamoDB client in region {config.region}')
 
     def insert_item(self, item, primary_key: str = 'id'):
