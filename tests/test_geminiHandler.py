@@ -101,15 +101,21 @@ class TestGoogleGeminiHandler:
     @patch('auris_tools.geminiHandler.logger')
     def test_generate_output_with_api_error(self, mock_logger):
         """Test content generation handles API errors gracefully."""
-        # Use invalid API key to trigger error
+        # Create handler with valid API key first
         handler = GoogleGeminiHandler(
-            api_key='invalid_api_key_123', model=self.test_model
+            api_key=self.api_key, model=self.test_model
         )
 
-        result = handler.generate_output('Test prompt')
+        # Mock the model's generate_content method to raise an exception
+        with patch.object(
+            handler.model,
+            'generate_content',
+            side_effect=Exception('API Error'),
+        ):
+            result = handler.generate_output('Test prompt')
 
-        # Should return empty string on error
-        assert result == ''
+            # Should return empty string on error
+            assert result == ''
 
     def test_get_text_success(self):
         """Test successful text extraction from response."""

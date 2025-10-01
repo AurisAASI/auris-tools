@@ -1,4 +1,3 @@
-# TODO Montar o handler adequado (WIP)
 import logging
 import os
 
@@ -75,11 +74,9 @@ class GoogleGeminiHandler:
             logger.error(
                 'Gemini API key not configured. Please, define the GEMINI_API_KEY environment variable or enter your key directly in the code.'
             )
-        else:
-            genai.configure(api_key=self.api_key)
 
         self.model_name = model
-        self._check_model_availability(self.model_name)
+        self._check_model_availability()
 
         # More configuration from input parameters
         self.temperature = kwargs.get('temperature', 0.5)
@@ -195,17 +192,13 @@ class GoogleGeminiHandler:
             logger.error(f'Error extracting text from response: {str(e)}')
             return ''
 
-    def _check_model_availability(self, model: str):
+    def _check_model_availability(self):
         """Check if the specified Gemini model is available.
 
         This private method validates that the requested model name exists in the
         list of available Google Gemini models. It queries the Google AI API to
         get the current list of available models and compares against the requested
         model name.
-
-        Args:
-            model (str): The name of the Gemini model to check availability for.
-                Examples: 'gemini-2.5-flash', 'gemini-2.0-flash-exp', 'gemini-pro'.
 
         Raises:
             TypeError: If the specified model is not found in the list of available
@@ -223,11 +216,30 @@ class GoogleGeminiHandler:
             >>> handler = GoogleGeminiHandler(model="gemini-2.5-flash")  # Success
             >>> handler = GoogleGeminiHandler(model="invalid-model")     # Raises TypeError
         """
-        available_models = genai.list_models()
-        if model not in [m.name for m in available_models]:
-            logger.error(
-                f'Model {model} is not available. Please check the model name.'
-            )
-            raise TypeError(f'Invalid model name: {model}')
-        else:
-            logger.info(f'Model {model} is available.')
+        try:
+            available_models = genai.list_models()
+            # Extract model names and handle the 'models/' prefix
+            available_model_names = []
+            for model in available_models:
+                model_name = model.name
+                # Remove 'models/' prefix if present
+                if model_name.startswith('models/'):
+                    model_name = model_name[7:]  # Remove 'models/' prefix
+                available_model_names.append(model_name)
+
+            if self.model_name not in available_model_names:
+                logger.error(
+                    f'Model {self.model_name} is not available. Please check the model name.'
+                )
+                logger.info(
+                    f'Available models: {", ".join(available_model_names)}'
+                )
+                raise TypeError(f'Invalid model name: {self.model_name}')
+            else:
+                logger.info(f'Model {self.model_name} is available.')
+        except Exception as e:
+            if 'Invalid model name' in str(e):
+                raise  # Re-raise our custom error
+            else:
+                logger.error(f'Error checking model availability: {str(e)}')
+                # Don't raise error for API connectivity issues, just log
