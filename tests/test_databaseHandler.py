@@ -20,6 +20,16 @@ class TestDatabaseHandler:
             table_name=self.table_name, config=self.config
         )
 
+    def test_init_invalid_table_name_raise_error(self):
+        """Test initialization with invalid table name raises an error."""
+        with pytest.raises(Exception) as error:
+            DatabaseHandler(
+                table_name='invalid_table_name_that_does_not_exist',
+                config=self.config,
+            )
+
+        assert 'Table does not exist' in str(error.value)
+
     def test_init_with_parameters(self):
         """Test initialization with parameters."""
 
@@ -39,28 +49,28 @@ class TestDatabaseHandler:
             'metadata': {'created_by': 'user123'},
             'created_at': collect_timestamp(),
         }
-        response = self.db_handler.insert_item(self.table_name, item)
+        response = self.db_handler.insert_item(item)
         assert response is not None
 
         # delete the item after test
-        self.db_handler.delete_item(self.table_name, item_id)
+        self.db_handler.delete_item(item_id)
         # TODO TERMINAR AQUI!!!
 
     def test_input_item_raise_error_on_invalid_item(self):
         """Test inserting an invalid item raises an error."""
         with pytest.raises(TypeError):
-            self.db_handler.insert_item(self.table_name, 'invalid_item')
+            self.db_handler.insert_item('invalid_item')
 
     def test_get_item_dynamo_notation_success(self):
         """Test retrieving an item successfully."""
         key = {'id': {'S': ID_SAMPLE}}
-        item = self.db_handler.get_item(self.table_name, key)
+        item = self.db_handler.get_item(key)
         assert item is not None
 
     def test_get_item_json_notation_success(self):
         """Test retrieving an item successfully."""
         key = {'id': ID_SAMPLE}
-        item = self.db_handler.get_item(self.table_name, key)
+        item = self.db_handler.get_item(key)
         assert item is not None
 
     def test_item_is_serialized(self):
@@ -96,13 +106,13 @@ class TestDatabaseHandler:
         }
 
         # Insert the temporary item
-        self.db_handler.insert_item(self.table_name, temp_item)
+        self.db_handler.insert_item(temp_item)
 
         # Verify the item exists
         key = {'id': item_id}
-        item = self.db_handler.get_item(self.table_name, key)
+        item = self.db_handler.get_item(key)
         assert item is not None
 
         # Now delete the item
-        result = self.db_handler.delete_item(self.table_name, key)
+        result = self.db_handler.delete_item(key)
         assert result is True
