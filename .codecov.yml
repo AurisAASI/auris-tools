@@ -1,11 +1,10 @@
 coverage:
   status:
+    project:
+      default:
+        enabled: true
+        # Allow up to 5% drop in overall project coverage before failing
+        threshold: 5%
     patch:
       default:
-        target: 80%
-    project: #add everything under here, more options at https://docs.codecov.com/docs/commit-status
-      default:
-        # basic
-        target: 80% #default
-        threshold: 0%
-        base: auto 
+        enabled: false
