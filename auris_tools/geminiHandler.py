@@ -1,4 +1,3 @@
-# TODO Montar o handler adequado (WIP)
 import logging
 import os
 
