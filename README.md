@@ -1,5 +1,11 @@
 # auris-tools
 
+[![PyPI version](https://img.shields.io/pypi/v/auris-tools.svg)](https://pypi.org/project/auris-tools/)
+[![Documentation Status](https://readthedocs.org/projects/auris-tools/badge/?version=latest)](https://auris-tools.readthedocs.io/en/latest/?badge=latest)
+[![CI for Develop Branch](https://github.com/AurisAASI/auris-tools/actions/workflows/ci_develop.yml/badge.svg?branch=develop)](https://github.com/AurisAASI/auris-tools/actions/workflows/ci_develop.yml)
+[![CI for Develop Branch](https://github.com/AurisAASI/auris-tools/actions/workflows/ci_develop.yml/badge.svg?branch=main)](https://github.com/AurisAASI/auris-tools/actions/workflows/ci_develop.yml)
+[![codecov](https://codecov.io/gh/AurisAASI/auris-tools/graph/badge.svg?token=08891W8HP2)](https://codecov.io/gh/AurisAASI/auris-tools)
+
 The swiss knife tools to coordinates cloud frameworks with an easy for Auris platforms
 
 ## Installation
@@ -46,11 +52,26 @@ The main classes and modules are organized as follows:
   ```bash
   task test
   ```
-- **Run linter (ruff):**
+- **Run linter (blue and isort):**
   ```bash
   task lint
   ```
 
 Test coverage and linting are enforced in CI. Make sure all tests pass and code is linted before submitting a PR.
+
+## Documentation
+
+We use MkDocs with Material theme for our documentation:
+
+- **Run documentation server locally:**
+  ```bash
+  task docs
+  ```
+- **Build documentation:**
+  ```bash
+  task docs-build
+  ```
+
+The documentation is automatically published to Read the Docs when changes are pushed to the main branch.
 
 ---
