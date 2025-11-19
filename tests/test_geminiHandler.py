@@ -178,3 +178,10 @@ class TestGoogleGeminiHandler:
         # Should use default model
         assert handler.model_name == 'gemini-2.5-flash'
         assert handler.model is not None
+
+    def test_check_model_availability_default_model(self):
+        """Test model availability check with default model."""
+        handler = GoogleGeminiHandler()
+
+        # This should not raise an exception
+        assert handler.model is not None

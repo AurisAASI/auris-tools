@@ -217,6 +217,7 @@ class GoogleGeminiHandler:
             >>> handler = GoogleGeminiHandler(model="invalid-model")     # Raises TypeError
         """
         try:
+            genai.configure(api_key=self.api_key)
             available_models = genai.list_models()
             # Extract model names and handle the 'models/' prefix
             available_model_names = []
