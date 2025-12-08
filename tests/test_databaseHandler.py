@@ -116,3 +116,233 @@ class TestDatabaseHandler:
         # Now delete the item
         result = self.db_handler.delete_item(key)
         assert result is True
+
+    def test_update_item_success_with_string_key(self):
+        """Test updating an item successfully using a string key."""
+        # Create a temporary item to update
+        item_id = generate_uuid()
+        temp_item = {
+            'id': item_id,
+            'name': 'Original Name',
+            'value': 100,
+            'is_active': False,
+            'created_at': collect_timestamp(),
+        }
+        self.db_handler.insert_item(temp_item)
+
+        # Update the item
+        updates = {
+            'name': 'Updated Name',
+            'value': 200,
+            'is_active': True,
+            'new_field': 'new_value',
+        }
+        updated_item = self.db_handler.update_item(item_id, updates)
+
+        # Verify the updates
+        assert updated_item is not None
+        assert updated_item['name'] == 'Updated Name'
+        assert updated_item['value'] == 200
+        assert updated_item['is_active'] is True
+        assert updated_item['new_field'] == 'new_value'
+        assert updated_item['id'] == item_id
+
+        # Clean up
+        self.db_handler.delete_item(item_id)
+
+    def test_update_item_success_with_dict_key(self):
+        """Test updating an item successfully using a dictionary key."""
+        # Create a temporary item to update
+        item_id = generate_uuid()
+        temp_item = {
+            'id': item_id,
+            'name': 'Original Name',
+            'value': 100,
+            'created_at': collect_timestamp(),
+        }
+        self.db_handler.insert_item(temp_item)
+
+        # Update the item using dict key
+        key = {'id': item_id}
+        updates = {'name': 'Updated Name', 'value': 300}
+        updated_item = self.db_handler.update_item(key, updates)
+
+        # Verify the updates
+        assert updated_item is not None
+        assert updated_item['name'] == 'Updated Name'
+        assert updated_item['value'] == 300
+        assert updated_item['id'] == item_id
+
+        # Clean up
+        self.db_handler.delete_item(item_id)
+
+    def test_update_item_add_new_attributes(self):
+        """Test adding new attributes to an existing item."""
+        # Create a temporary item
+        item_id = generate_uuid()
+        temp_item = {
+            'id': item_id,
+            'name': 'Test Item',
+            'created_at': collect_timestamp(),
+        }
+        self.db_handler.insert_item(temp_item)
+
+        # Add new attributes
+        updates = {
+            'tags': ['tag1', 'tag2', 'tag3'],
+            'metadata': {'author': 'user123', 'version': 1},
+            'description': 'A new description',
+        }
+        updated_item = self.db_handler.update_item(item_id, updates)
+
+        # Verify new attributes were added
+        assert updated_item is not None
+        assert updated_item['tags'] == ['tag1', 'tag2', 'tag3']
+        assert updated_item['metadata'] == {'author': 'user123', 'version': 1}
+        assert updated_item['description'] == 'A new description'
+        assert updated_item['name'] == 'Test Item'
+
+        # Clean up
+        self.db_handler.delete_item(item_id)
+
+    def test_update_item_raises_error_on_nonexistent_key(self):
+        """Test that updating a non-existent item raises ValueError."""
+        non_existent_id = generate_uuid()
+        updates = {'name': 'Updated Name'}
+
+        with pytest.raises(ValueError) as error:
+            self.db_handler.update_item(non_existent_id, updates)
+
+        assert 'does not exist' in str(error.value)
+
+    def test_update_item_raises_error_on_invalid_key_type(self):
+        """Test that invalid key type raises TypeError."""
+        updates = {'name': 'Updated Name'}
+
+        with pytest.raises(TypeError) as error:
+            self.db_handler.update_item(12345, updates)
+
+        assert 'Key must be a string identifier or a dictionary' in str(
+            error.value
+        )
+
+    def test_update_item_raises_error_on_invalid_updates_type(self):
+        """Test that invalid updates type raises TypeError."""
+        item_id = generate_uuid()
+
+        with pytest.raises(TypeError) as error:
+            self.db_handler.update_item(item_id, 'invalid_updates')
+
+        assert 'Updates must be a dictionary' in str(error.value)
+
+    def test_update_item_raises_error_on_empty_updates(self):
+        """Test that empty updates dictionary raises ValueError."""
+        # Create a temporary item
+        item_id = generate_uuid()
+        temp_item = {
+            'id': item_id,
+            'name': 'Test Item',
+            'created_at': collect_timestamp(),
+        }
+        self.db_handler.insert_item(temp_item)
+
+        # Try to update with empty dictionary
+        with pytest.raises(ValueError) as error:
+            self.db_handler.update_item(item_id, {})
+
+        assert 'Updates dictionary cannot be empty' in str(error.value)
+
+        # Clean up
+        self.db_handler.delete_item(item_id)
+
+    def test_update_item_ignores_primary_key_update(self):
+        """Test that attempting to update the primary key is ignored."""
+        # Create a temporary item
+        item_id = generate_uuid()
+        temp_item = {
+            'id': item_id,
+            'name': 'Test Item',
+            'value': 100,
+            'created_at': collect_timestamp(),
+        }
+        self.db_handler.insert_item(temp_item)
+
+        # Try to update including the primary key (should be ignored)
+        new_id = generate_uuid()
+        updates = {'id': new_id, 'name': 'Updated Name', 'value': 200}
+        updated_item = self.db_handler.update_item(item_id, updates)
+
+        # Verify that id was not changed but other fields were updated
+        assert updated_item is not None
+        assert updated_item['id'] == item_id  # Original id preserved
+        assert updated_item['name'] == 'Updated Name'
+        assert updated_item['value'] == 200
+
+        # Clean up
+        self.db_handler.delete_item(item_id)
+
+    def test_update_item_with_complex_data_types(self):
+        """Test updating an item with complex data types."""
+        from decimal import Decimal
+
+        # Create a temporary item
+        item_id = generate_uuid()
+        temp_item = {
+            'id': item_id,
+            'name': 'Test Item',
+            'created_at': collect_timestamp(),
+        }
+        self.db_handler.insert_item(temp_item)
+
+        # Update with complex types (note: using Decimal for numeric values)
+        updates = {
+            'list_field': [1, 2, 3, 'four', Decimal('5.5')],
+            'nested_dict': {
+                'level1': {'level2': {'level3': 'deep_value'}},
+                'numbers': [10, 20, 30],
+            },
+            'boolean_field': True,
+            'decimal_field': Decimal('3.14159'),
+            'null_field': None,
+        }
+        updated_item = self.db_handler.update_item(item_id, updates)
+
+        # Verify complex types were updated correctly
+        assert updated_item is not None
+        assert updated_item['list_field'] == [1, 2, 3, 'four', Decimal('5.5')]
+        assert (
+            updated_item['nested_dict']['level1']['level2']['level3']
+            == 'deep_value'
+        )
+        assert updated_item['boolean_field'] is True
+        assert updated_item['decimal_field'] == Decimal('3.14159')
+        assert updated_item['null_field'] is None
+
+        # Clean up
+        self.db_handler.delete_item(item_id)
+
+    def test_update_item_with_serialized_key(self):
+        """Test updating an item using a DynamoDB serialized key."""
+        # Create a temporary item
+        item_id = generate_uuid()
+        temp_item = {
+            'id': item_id,
+            'name': 'Test Item',
+            'value': 100,
+            'created_at': collect_timestamp(),
+        }
+        self.db_handler.insert_item(temp_item)
+
+        # Update using serialized key format
+        serialized_key = {'id': {'S': item_id}}
+        updates = {'name': 'Updated with Serialized Key', 'value': 500}
+        updated_item = self.db_handler.update_item(serialized_key, updates)
+
+        # Verify the updates
+        assert updated_item is not None
+        assert updated_item['name'] == 'Updated with Serialized Key'
+        assert updated_item['value'] == 500
+        assert updated_item['id'] == item_id
+
+        # Clean up
+        self.db_handler.delete_item(item_id)
