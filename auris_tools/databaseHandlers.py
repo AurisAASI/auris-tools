@@ -108,6 +108,119 @@ class DatabaseHandler:
             )
             return False
 
+    def update_item(self, key, updates, primary_key='id'):
+        """
+        Update an item in a DynamoDB table.
+
+        This method first verifies that the item exists by checking the primary key,
+        then updates or adds the specified attributes.
+
+        Args:
+            key (str or dict): Either a string identifier for the primary key,
+                              or a dictionary containing the complete key structure.
+            updates (dict): Dictionary of attributes to update or add to the item.
+            primary_key (str, optional): Name of the primary key field. Defaults to 'id'.
+
+        Returns:
+            dict: The updated item attributes.
+
+        Raises:
+            TypeError: If key is not a string or dictionary, or if updates is not a dictionary.
+            ValueError: If the item with the specified key does not exist in the table.
+        """
+        # Convert string key to a dictionary with the primary key
+        if isinstance(key, str):
+            key_dict = {primary_key: key}
+        elif isinstance(key, dict):
+            key_dict = key.copy()
+        else:
+            raise TypeError('Key must be a string identifier or a dictionary')
+
+        if not isinstance(updates, dict):
+            raise TypeError('Updates must be a dictionary')
+
+        if not updates:
+            raise ValueError('Updates dictionary cannot be empty')
+
+        # Check if the key is in DynamoDB format
+        if not self.item_is_serialized(key_dict):
+            serialized_key = self._serialize_item(key_dict)
+        else:
+            serialized_key = key_dict
+
+        # Verify that the item exists
+        try:
+            response = self.client.get_item(
+                TableName=self.table_name, Key=serialized_key
+            )
+            if 'Item' not in response:
+                raise ValueError(
+                    f'Item with key {key_dict} does not exist in table {self.table_name}'
+                )
+        except self.client.exceptions.ResourceNotFoundException:
+            raise ValueError(
+                f'Item with key {key_dict} does not exist in table {self.table_name}'
+            )
+        except Exception as e:
+            logging.error(
+                f'Error checking item existence in {self.table_name}: {str(e)}'
+            )
+            raise
+
+        # Build the update expression
+        update_expression_parts = []
+        expression_attribute_names = {}
+        expression_attribute_values = {}
+
+        for idx, (attr_name, attr_value) in enumerate(updates.items()):
+            # Skip if trying to update primary key
+            if attr_name == primary_key or (
+                isinstance(key_dict, dict) and attr_name in key_dict
+            ):
+                logging.warning(
+                    f'Skipping update for key attribute: {attr_name}'
+                )
+                continue
+
+            # Use placeholders to handle reserved words and special characters
+            attr_placeholder = f'#attr{idx}'
+            value_placeholder = f':val{idx}'
+
+            update_expression_parts.append(
+                f'{attr_placeholder} = {value_placeholder}'
+            )
+            expression_attribute_names[attr_placeholder] = attr_name
+            expression_attribute_values[
+                value_placeholder
+            ] = self._serialize_item({attr_name: attr_value})[attr_name]
+
+        if not update_expression_parts:
+            raise ValueError(
+                'No valid attributes to update (cannot update key attributes)'
+            )
+
+        update_expression = 'SET ' + ', '.join(update_expression_parts)
+
+        # Perform the update
+        try:
+            response = self.client.update_item(
+                TableName=self.table_name,
+                Key=serialized_key,
+                UpdateExpression=update_expression,
+                ExpressionAttributeNames=expression_attribute_names,
+                ExpressionAttributeValues=expression_attribute_values,
+                ReturnValues='ALL_NEW',
+            )
+            logging.info(
+                f'Updated item in {self.table_name} with key {key_dict}'
+            )
+            return self._deserialize_item(response['Attributes'])
+        except Exception as e:
+            logging.error(
+                f'Error updating item in {self.table_name}: {str(e)}'
+            )
+            raise
+
     def item_is_serialized(self, item):
         """Check if an item is in DynamoDB serialized format"""
         return all(isinstance(v, dict) and len(v) == 1 for v in item.values())
