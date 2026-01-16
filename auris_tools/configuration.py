@@ -3,8 +3,10 @@ import os
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+IN_LAMBDA = bool(os.environ.get('AWS_EXECUTION_ENV'))
+
+if not IN_LAMBDA:
+    load_dotenv()
 
 
 class AWSConfiguration:
@@ -21,21 +23,36 @@ class AWSConfiguration:
         profile: str = None,
         endpoint_url: str = None,
     ):
-        # Try to get credentials from environment variables first
-        self.access_key = (
-            access_key if access_key else os.environ.get('AWS_ACCESS_KEY_ID')
+        self._running_in_lambda = bool(os.environ.get('AWS_EXECUTION_ENV'))
+
+        env_access_key = (
+            None
+            if self._running_in_lambda
+            else os.environ.get('AWS_ACCESS_KEY_ID')
         )
-        self.secret_key = (
-            secret_key
-            if secret_key
+        env_secret_key = (
+            None
+            if self._running_in_lambda
             else os.environ.get('AWS_SECRET_ACCESS_KEY')
         )
+
+        # Try to get credentials from environment variables first
+        self.access_key = access_key if access_key else env_access_key
+        self.secret_key = secret_key if secret_key else env_secret_key
         self.region = (
             region
             if region
             else os.environ.get('AWS_DEFAULT_REGION') or 'us-east-1'
         )
-        self.profile = profile if profile else os.environ.get('AWS_PROFILE')
+        self.profile = (
+            profile
+            if profile
+            else (
+                None
+                if self._running_in_lambda
+                else os.environ.get('AWS_PROFILE')
+            )
+        )
         self.endpoint_url = (
             endpoint_url
             if endpoint_url
@@ -47,6 +64,8 @@ class AWSConfiguration:
 
     def _validate_config(self):
         """Validate that we have enough configuration to proceed."""
+        if self._running_in_lambda:
+            return
         if not ((self.access_key and self.secret_key) or self.profile):
             logging.warning(
                 'No AWS credentials provided via environment variables or constructor. '

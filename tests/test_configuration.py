@@ -173,3 +173,29 @@ class TestAWSConfiguration:
         """Test no validation warning when profile is provided."""
         config = AWSConfiguration(profile=self.test_profile)
         mock_warning.assert_not_called()
+
+    @patch.dict(
+        os.environ,
+        {
+            'AWS_EXECUTION_ENV': 'AWS_Lambda_python3.12',
+            'AWS_ACCESS_KEY_ID': 'env-key',
+            'AWS_SECRET_ACCESS_KEY': 'env-secret',
+            'AWS_DEFAULT_REGION': 'us-west-2',
+            'AWS_PROFILE': 'env-profile',
+        },
+        clear=True,
+    )
+    def test_lambda_env_ignores_env_credentials(self):
+        """Ensure Lambda uses execution role instead of env credentials."""
+        config = AWSConfiguration()
+        session_args = config.get_boto3_session_args()
+        assert session_args == {'region_name': 'us-west-2'}
+
+    @patch.dict(
+        os.environ, {'AWS_EXECUTION_ENV': 'AWS_Lambda_python3.12'}, clear=True
+    )
+    @patch('logging.warning')
+    def test_validate_config_no_warning_in_lambda(self, mock_warning):
+        """Do not emit warnings when running inside Lambda."""
+        AWSConfiguration()
+        mock_warning.assert_not_called()
