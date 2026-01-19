@@ -360,11 +360,11 @@ class TestDatabaseHandlerScanAndQuery:
         self.db_handler = DatabaseHandler(
             table_name=self.table_name, config=self.config
         )
-        
+
         # Create test items with varying attributes for filter testing
         self.test_items = []
         base_timestamp = collect_timestamp()
-        
+
         # Create 10 test items with different attributes
         for i in range(10):
             item_id = generate_uuid()
@@ -373,7 +373,9 @@ class TestDatabaseHandlerScanAndQuery:
                 'name': f'Test Item {i}',
                 'age': 20 + i * 5,  # Ages: 20, 25, 30, ..., 65
                 'status': 'active' if i % 2 == 0 else 'inactive',
-                'category': 'premium' if i < 3 else ('gold' if i < 6 else 'standard'),
+                'category': 'premium'
+                if i < 3
+                else ('gold' if i < 6 else 'standard'),
                 'score': 50 + i * 10,  # Scores: 50, 60, 70, ..., 140
                 'verified': i % 3 == 0,  # True for items 0, 3, 6, 9
                 'created_at': base_timestamp,
@@ -381,9 +383,9 @@ class TestDatabaseHandlerScanAndQuery:
             }
             self.db_handler.insert_item(item)
             self.test_items.append(item)
-        
+
         yield
-        
+
         # Cleanup: delete all test items
         for item in self.test_items:
             self.db_handler.delete_item(item['id'])
@@ -391,7 +393,7 @@ class TestDatabaseHandlerScanAndQuery:
     def test_scan_all_items(self):
         """Test scanning all items without filters."""
         result = self.db_handler.scan()
-        
+
         assert result is not None
         assert 'Items' in result
         assert 'Count' in result
@@ -402,7 +404,7 @@ class TestDatabaseHandlerScanAndQuery:
     def test_scan_with_eq_filter(self):
         """Test scanning with equality filter."""
         result = self.db_handler.scan(filters={'status__eq': 'active'})
-        
+
         assert result is not None
         assert len(result['Items']) >= 5  # 5 active items in our test data
         for item in result['Items']:
@@ -411,8 +413,10 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_gt_filter(self):
         """Test scanning with greater than filter."""
-        result = self.db_handler.scan(filters={'age__gt': 40, 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={'age__gt': 40, 'test_batch__eq': 'scan_query_test'}
+        )
+
         assert result is not None
         assert len(result['Items']) >= 4  # Items with age 45, 50, 55, 60, 65
         for item in result['Items']:
@@ -420,17 +424,23 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_gte_filter(self):
         """Test scanning with greater than or equal filter."""
-        result = self.db_handler.scan(filters={'age__gte': 40, 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={'age__gte': 40, 'test_batch__eq': 'scan_query_test'}
+        )
+
         assert result is not None
-        assert len(result['Items']) >= 5  # Items with age 40, 45, 50, 55, 60, 65
+        assert (
+            len(result['Items']) >= 5
+        )  # Items with age 40, 45, 50, 55, 60, 65
         for item in result['Items']:
             assert item['age'] >= 40
 
     def test_scan_with_lt_filter(self):
         """Test scanning with less than filter."""
-        result = self.db_handler.scan(filters={'age__lt': 40, 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={'age__lt': 40, 'test_batch__eq': 'scan_query_test'}
+        )
+
         assert result is not None
         assert len(result['Items']) >= 4  # Items with age 20, 25, 30, 35
         for item in result['Items']:
@@ -438,8 +448,10 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_lte_filter(self):
         """Test scanning with less than or equal filter."""
-        result = self.db_handler.scan(filters={'age__lte': 40, 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={'age__lte': 40, 'test_batch__eq': 'scan_query_test'}
+        )
+
         assert result is not None
         assert len(result['Items']) >= 5  # Items with age 20, 25, 30, 35, 40
         for item in result['Items']:
@@ -447,8 +459,13 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_between_filter(self):
         """Test scanning with between filter."""
-        result = self.db_handler.scan(filters={'age__between': [30, 50], 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={
+                'age__between': [30, 50],
+                'test_batch__eq': 'scan_query_test',
+            }
+        )
+
         assert result is not None
         assert len(result['Items']) >= 5  # Ages 30, 35, 40, 45, 50
         for item in result['Items']:
@@ -456,8 +473,13 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_in_filter(self):
         """Test scanning with in filter."""
-        result = self.db_handler.scan(filters={'category__in': ['premium', 'gold'], 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={
+                'category__in': ['premium', 'gold'],
+                'test_batch__eq': 'scan_query_test',
+            }
+        )
+
         assert result is not None
         assert len(result['Items']) >= 6  # 3 premium + 3 gold
         for item in result['Items']:
@@ -465,8 +487,13 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_begins_with_filter(self):
         """Test scanning with begins_with filter."""
-        result = self.db_handler.scan(filters={'name__begins_with': 'Test Item', 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={
+                'name__begins_with': 'Test Item',
+                'test_batch__eq': 'scan_query_test',
+            }
+        )
+
         assert result is not None
         assert len(result['Items']) >= 10  # All our test items
         for item in result['Items']:
@@ -474,8 +501,13 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_exists_filter(self):
         """Test scanning with exists filter."""
-        result = self.db_handler.scan(filters={'verified__exists': True, 'test_batch__eq': 'scan_query_test'})
-        
+        result = self.db_handler.scan(
+            filters={
+                'verified__exists': True,
+                'test_batch__eq': 'scan_query_test',
+            }
+        )
+
         assert result is not None
         assert len(result['Items']) >= 10  # All items have verified attribute
         for item in result['Items']:
@@ -483,13 +515,15 @@ class TestDatabaseHandlerScanAndQuery:
 
     def test_scan_with_multiple_filters(self):
         """Test scanning with multiple filters combined."""
-        result = self.db_handler.scan(filters={
-            'status__eq': 'active',
-            'age__gte': 30,
-            'category__in': ['premium', 'gold'],
-            'test_batch__eq': 'scan_query_test'
-        })
-        
+        result = self.db_handler.scan(
+            filters={
+                'status__eq': 'active',
+                'age__gte': 30,
+                'category__in': ['premium', 'gold'],
+                'test_batch__eq': 'scan_query_test',
+            }
+        )
+
         assert result is not None
         for item in result['Items']:
             assert item['status'] == 'active'
@@ -499,10 +533,9 @@ class TestDatabaseHandlerScanAndQuery:
     def test_scan_with_max_items(self):
         """Test scanning with max_items limit."""
         result = self.db_handler.scan(
-            filters={'test_batch__eq': 'scan_query_test'},
-            max_items=5
+            filters={'test_batch__eq': 'scan_query_test'}, max_items=5
         )
-        
+
         assert result is not None
         assert len(result['Items']) == 5
         assert result['Count'] == 5
@@ -510,10 +543,9 @@ class TestDatabaseHandlerScanAndQuery:
     def test_scan_with_page_size(self):
         """Test scanning with page_size control."""
         result = self.db_handler.scan(
-            filters={'test_batch__eq': 'scan_query_test'},
-            page_size=3
+            filters={'test_batch__eq': 'scan_query_test'}, page_size=3
         )
-        
+
         assert result is not None
         assert 'Items' in result
         assert 'Count' in result
@@ -525,15 +557,17 @@ class TestDatabaseHandlerScanAndQuery:
         result = self.db_handler.scan(
             filters={'test_batch__eq': 'scan_query_test'},
             projection_expression='id, age, category',
-            max_items=3
+            max_items=3,
         )
-        
+
         assert result is not None
         assert len(result['Items']) > 0
         for item in result['Items']:
             # Should only have projected attributes
             assert 'id' in item
-            assert 'age' in item or 'category' in item  # At least one should be present
+            assert (
+                'age' in item or 'category' in item
+            )  # At least one should be present
 
     def test_scan_generator_mode(self):
         """Test scanning with generator mode."""
@@ -541,12 +575,12 @@ class TestDatabaseHandlerScanAndQuery:
         generator = self.db_handler.scan(
             filters={'test_batch__eq': 'scan_query_test'},
             max_items=5,
-            return_generator=True
+            return_generator=True,
         )
-        
+
         for item in generator:
             items_list.append(item)
-        
+
         assert len(items_list) == 5
         for item in items_list:
             assert 'id' in item
@@ -555,7 +589,7 @@ class TestDatabaseHandlerScanAndQuery:
     def test_scan_empty_result(self):
         """Test scanning with filters that return no results."""
         result = self.db_handler.scan(filters={'age__gt': 10000})
-        
+
         assert result is not None
         assert result['Count'] == 0
         assert len(result['Items']) == 0
@@ -563,9 +597,9 @@ class TestDatabaseHandlerScanAndQuery:
     def test_query_by_partition_key(self):
         """Test querying by partition key only."""
         test_item = self.test_items[0]
-        
+
         result = self.db_handler.query(partition_key_value=test_item['id'])
-        
+
         assert result is not None
         assert result['Count'] == 1
         assert len(result['Items']) == 1
@@ -574,12 +608,12 @@ class TestDatabaseHandlerScanAndQuery:
     def test_query_with_filters(self):
         """Test querying with additional filters."""
         test_item = self.test_items[0]
-        
+
         result = self.db_handler.query(
             partition_key_value=test_item['id'],
-            filters={'status__eq': 'active'}
+            filters={'status__eq': 'active'},
         )
-        
+
         assert result is not None
         if result['Count'] > 0:
             assert result['Items'][0]['status'] == 'active'
@@ -587,24 +621,23 @@ class TestDatabaseHandlerScanAndQuery:
     def test_query_with_max_items(self):
         """Test querying with max_items limit."""
         test_item = self.test_items[0]
-        
+
         result = self.db_handler.query(
-            partition_key_value=test_item['id'],
-            max_items=1
+            partition_key_value=test_item['id'], max_items=1
         )
-        
+
         assert result is not None
         assert result['Count'] <= 1
 
     def test_query_with_projection(self):
         """Test querying with projection expression."""
         test_item = self.test_items[0]
-        
+
         result = self.db_handler.query(
             partition_key_value=test_item['id'],
-            projection_expression='id, age, category'
+            projection_expression='id, age, category',
         )
-        
+
         assert result is not None
         if result['Count'] > 0:
             assert 'id' in result['Items'][0]
@@ -612,36 +645,35 @@ class TestDatabaseHandlerScanAndQuery:
     def test_query_generator_mode(self):
         """Test querying with generator mode."""
         test_item = self.test_items[0]
-        
+
         items_list = []
         generator = self.db_handler.query(
-            partition_key_value=test_item['id'],
-            return_generator=True
+            partition_key_value=test_item['id'], return_generator=True
         )
-        
+
         for item in generator:
             items_list.append(item)
-        
+
         assert len(items_list) >= 1
         assert items_list[0]['id'] == test_item['id']
 
     def test_query_with_sort_key_condition_using_key(self):
         """Test querying with sort key condition using boto3 Key expression."""
         test_item = self.test_items[0]
-        
+
         # Query with sort key condition (this will work if table has sort key)
         # For tables without sort key, this should still work with just partition key
-        result = self.db_handler.query(
-            partition_key_value=test_item['id']
-        )
-        
+        result = self.db_handler.query(partition_key_value=test_item['id'])
+
         assert result is not None
         assert 'Items' in result
 
     def test_query_nonexistent_key(self):
         """Test querying with a non-existent partition key."""
-        result = self.db_handler.query(partition_key_value='nonexistent-key-12345')
-        
+        result = self.db_handler.query(
+            partition_key_value='nonexistent-key-12345'
+        )
+
         assert result is not None
         assert result['Count'] == 0
         assert len(result['Items']) == 0
@@ -650,39 +682,39 @@ class TestDatabaseHandlerScanAndQuery:
         """Test that scanning with invalid index name raises ValueError."""
         with pytest.raises(ValueError) as exc_info:
             self.db_handler.scan(
-                filters={'status__eq': 'active'},
-                index_name='NonExistentIndex'
+                filters={'status__eq': 'active'}, index_name='NonExistentIndex'
             )
-        
+
         assert 'does not exist' in str(exc_info.value)
 
     def test_query_with_invalid_index_raises_error(self):
         """Test that querying with invalid index name raises ValueError."""
         with pytest.raises(ValueError) as exc_info:
             self.db_handler.query(
-                partition_key_value='test',
-                index_name='NonExistentIndex'
+                partition_key_value='test', index_name='NonExistentIndex'
             )
-        
+
         assert 'does not exist' in str(exc_info.value)
 
     def test_scan_with_ne_filter(self):
         """Test scanning with not equal filter."""
-        result = self.db_handler.scan(filters={
-            'status__ne': 'active',
-            'test_batch__eq': 'scan_query_test'
-        })
-        
+        result = self.db_handler.scan(
+            filters={
+                'status__ne': 'active',
+                'test_batch__eq': 'scan_query_test',
+            }
+        )
+
         assert result is not None
         for item in result['Items']:
             assert item['status'] != 'active'
 
     def test_scan_default_equality_without_operator(self):
         """Test that filters without operator syntax default to equality."""
-        result = self.db_handler.scan(filters={
-            'test_batch': 'scan_query_test'
-        })
-        
+        result = self.db_handler.scan(
+            filters={'test_batch': 'scan_query_test'}
+        )
+
         assert result is not None
         assert len(result['Items']) >= 10
         for item in result['Items']:

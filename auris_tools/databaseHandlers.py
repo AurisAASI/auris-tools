@@ -19,7 +19,9 @@ OPERATOR_MAP = {
     'between': lambda attr, val: Attr(attr).between(val[0], val[1]),
     'begins_with': lambda attr, val: Attr(attr).begins_with(val),
     'contains': lambda attr, val: Attr(attr).contains(val),
-    'exists': lambda attr, val: Attr(attr).exists() if val else Attr(attr).not_exists(),
+    'exists': lambda attr, val: Attr(attr).exists()
+    if val
+    else Attr(attr).not_exists(),
     'in': lambda attr, val: Attr(attr).is_in(val),
 }
 
@@ -42,9 +44,10 @@ class DatabaseHandler:
 
         # Create a DynamoDB client with additional configuration if needed
         self.client = session.client('dynamodb', **config.get_client_args())
-        
+
         # Import the ConditionExpressionBuilder for building expressions
         from boto3.dynamodb.conditions import ConditionExpressionBuilder
+
         self._condition_builder = ConditionExpressionBuilder()
 
         if not self._check_table_exists(table_name):
@@ -265,7 +268,9 @@ class DatabaseHandler:
             logging.error(f'Error checking table existence: {str(e)}')
             return False
 
-    def _build_expression_params(self, condition_expression, is_key_condition=False):
+    def _build_expression_params(
+        self, condition_expression, is_key_condition=False
+    ):
         """
         Build expression parameters for DynamoDB client API.
 
@@ -291,7 +296,9 @@ class DatabaseHandler:
         }
 
         if built_expression.attribute_name_placeholders:
-            result['expression_attribute_names'] = built_expression.attribute_name_placeholders
+            result[
+                'expression_attribute_names'
+            ] = built_expression.attribute_name_placeholders
 
         if built_expression.attribute_value_placeholders:
             # Serialize attribute values for DynamoDB client
@@ -359,7 +366,9 @@ class DatabaseHandler:
 
         return filter_expr
 
-    def _build_key_condition(self, partition_key_name, partition_key_value, sort_key_condition=None):
+    def _build_key_condition(
+        self, partition_key_name, partition_key_value, sort_key_condition=None
+    ):
         """
         Build a key condition expression for query operations.
 
@@ -401,9 +410,13 @@ class DatabaseHandler:
                                 elif operator == 'gte':
                                     sort_expr = Key(attr_name).gte(value)
                                 elif operator == 'between':
-                                    sort_expr = Key(attr_name).between(value[0], value[1])
+                                    sort_expr = Key(attr_name).between(
+                                        value[0], value[1]
+                                    )
                                 elif operator == 'begins_with':
-                                    sort_expr = Key(attr_name).begins_with(value)
+                                    sort_expr = Key(attr_name).begins_with(
+                                        value
+                                    )
                                 else:
                                     # Unsupported operator for sort key
                                     sort_expr = Key(attr_name).eq(value)
@@ -449,7 +462,7 @@ class DatabaseHandler:
                 available = ', '.join(index_names) if index_names else 'none'
                 error_msg = (
                     f"Index '{index_name}' does not exist on table '{self.table_name}'. "
-                    f"Available indexes: {available}"
+                    f'Available indexes: {available}'
                 )
                 logging.error(error_msg)
                 raise ValueError(error_msg)
@@ -460,8 +473,15 @@ class DatabaseHandler:
             logging.error(f'Error validating index {index_name}: {str(e)}')
             raise
 
-    def scan(self, filters=None, index_name=None, projection_expression=None,
-             max_items=None, page_size=None, return_generator=False):
+    def scan(
+        self,
+        filters=None,
+        index_name=None,
+        projection_expression=None,
+        max_items=None,
+        page_size=None,
+        return_generator=False,
+    ):
         """
         Scan table with optional filters.
 
@@ -514,9 +534,13 @@ class DatabaseHandler:
             expr_params = self._build_expression_params(filter_expr)
             scan_params['FilterExpression'] = expr_params['expression_string']
             if 'expression_attribute_names' in expr_params:
-                scan_params['ExpressionAttributeNames'] = expr_params['expression_attribute_names']
+                scan_params['ExpressionAttributeNames'] = expr_params[
+                    'expression_attribute_names'
+                ]
             if 'expression_attribute_values' in expr_params:
-                scan_params['ExpressionAttributeValues'] = expr_params['expression_attribute_values']
+                scan_params['ExpressionAttributeValues'] = expr_params[
+                    'expression_attribute_values'
+                ]
 
         if projection_expression:
             scan_params['ProjectionExpression'] = projection_expression
@@ -552,7 +576,9 @@ class DatabaseHandler:
                 total_scanned += response.get('ScannedCount', 0)
                 last_evaluated_key = response.get('LastEvaluatedKey')
 
-                if not last_evaluated_key or (max_items and total_count >= max_items):
+                if not last_evaluated_key or (
+                    max_items and total_count >= max_items
+                ):
                     break
 
             logging.info(
@@ -608,12 +634,24 @@ class DatabaseHandler:
                     break
 
         except Exception as e:
-            logging.error(f'Error in scan generator for {self.table_name}: {str(e)}')
+            logging.error(
+                f'Error in scan generator for {self.table_name}: {str(e)}'
+            )
             raise
 
-    def query(self, partition_key_value, partition_key_name='id', sort_key_condition=None,
-              filters=None, index_name=None, projection_expression=None, max_items=None,
-              page_size=None, scan_index_forward=True, return_generator=False):
+    def query(
+        self,
+        partition_key_value,
+        partition_key_name='id',
+        sort_key_condition=None,
+        filters=None,
+        index_name=None,
+        projection_expression=None,
+        max_items=None,
+        page_size=None,
+        scan_index_forward=True,
+        return_generator=False,
+    ):
         """
         Query items using partition key and optional filters.
 
@@ -673,18 +711,24 @@ class DatabaseHandler:
         filter_expr = self._build_filter_expression(filters)
 
         # Build query parameters - start with key condition
-        key_expr_params = self._build_expression_params(key_condition, is_key_condition=True)
-        
+        key_expr_params = self._build_expression_params(
+            key_condition, is_key_condition=True
+        )
+
         query_params = {
             'TableName': self.table_name,
             'KeyConditionExpression': key_expr_params['expression_string'],
             'ScanIndexForward': scan_index_forward,
         }
-        
+
         if 'expression_attribute_names' in key_expr_params:
-            query_params['ExpressionAttributeNames'] = key_expr_params['expression_attribute_names']
+            query_params['ExpressionAttributeNames'] = key_expr_params[
+                'expression_attribute_names'
+            ]
         if 'expression_attribute_values' in key_expr_params:
-            query_params['ExpressionAttributeValues'] = key_expr_params['expression_attribute_values']
+            query_params['ExpressionAttributeValues'] = key_expr_params[
+                'expression_attribute_values'
+            ]
 
         if index_name:
             query_params['IndexName'] = index_name
@@ -692,8 +736,10 @@ class DatabaseHandler:
         if filter_expr is not None:
             # Build filter expression params
             filter_expr_params = self._build_expression_params(filter_expr)
-            query_params['FilterExpression'] = filter_expr_params['expression_string']
-            
+            query_params['FilterExpression'] = filter_expr_params[
+                'expression_string'
+            ]
+
             # Merge attribute names and values (if any conflicts, filter takes precedence)
             if 'expression_attribute_names' in filter_expr_params:
                 if 'ExpressionAttributeNames' not in query_params:
@@ -701,7 +747,7 @@ class DatabaseHandler:
                 query_params['ExpressionAttributeNames'].update(
                     filter_expr_params['expression_attribute_names']
                 )
-            
+
             if 'expression_attribute_values' in filter_expr_params:
                 if 'ExpressionAttributeValues' not in query_params:
                     query_params['ExpressionAttributeValues'] = {}
@@ -743,7 +789,9 @@ class DatabaseHandler:
                 total_scanned += response.get('ScannedCount', 0)
                 last_evaluated_key = response.get('LastEvaluatedKey')
 
-                if not last_evaluated_key or (max_items and total_count >= max_items):
+                if not last_evaluated_key or (
+                    max_items and total_count >= max_items
+                ):
                     break
 
             logging.info(
@@ -799,5 +847,7 @@ class DatabaseHandler:
                     break
 
         except Exception as e:
-            logging.error(f'Error in query generator for {self.table_name}: {str(e)}')
+            logging.error(
+                f'Error in query generator for {self.table_name}: {str(e)}'
+            )
             raise
